@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JTP | Construye un Núcleo (Build a Nucleus) - Física Nuclear Completa</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .jtp-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%);
+    }
+    
+    .jtp-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .bucket-proton {
+      background: radial-gradient(circle at 30% 30%, #fecaca, #ef4444);
+      border: 2px solid #b91c1c;
+    }
+    
+    .bucket-neutron {
+      background: radial-gradient(circle at 30% 30%, #e0f2fe, #0ea5e9);
+      border: 2px solid #0369a1;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.03); opacity: 0.88; }
+    }
+    .pulse-glow {
+      animation: pulseGlow 1.8s infinite ease-in-out;
+    }
+
+    /* Custom scrollbar for history and tables */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- CABECERA ESTILO JTP -->
+  <header class="jtp-header border-b border-slate-700 text-white px-4 py-3 shadow-lg flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center space-x-3">
+      <div class="bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded text-lg shadow-md tracking-wider">JTP</div>
+      <div>
+        <h1 class="text-lg md:text-2xl font-black tracking-wide flex items-center gap-2">
+          <span>Construye un Núcleo</span>
+          <span class="text-xs font-semibold bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-700/50">Física Nuclear Avanzada</span>
+        </h1>
+        <p class="text-xs text-slate-300 hidden sm:block">Simulador Interactivo de Estabilidad, Radiación α, β, γ, 2β⁻, 2p⁺, 2n⁰ y Ramificaciones (Z = 0 a 118)</p>
+      </div>
+    </div>
+
+    <!-- Pestañas de navegación -->
+    <div class="flex items-center space-x-1 bg-slate-900/80 p-1 rounded-xl border border-slate-700 text-xs sm:text-sm">
+      <button id="tab-sim" onclick="switchTab('sim')" class="px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-amber-400 text-slate-950 shadow">
+        ⚛️ Núcleo & Lab
+      </button>
+      <button id="tab-segre" onclick="switchTab('segre')" class="px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:bg-slate-800">
+        📊 Carta N-Z (Segrè)
+      </button>
+      <button id="tab-info" onclick="switchTab('info')" class="px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:bg-slate-800">
+        📖 Conceptos
+      </button>
+    </div>
+
+    <!-- Botones de Control de Audio y Reinicio -->
+    <div class="flex items-center space-x-2">
+      <button id="btn-sound" onclick="toggleSound()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
+        <span id="sound-icon">🔊</span>
+        <span id="sound-text" class="hidden sm:inline">Sonido ON</span>
+      </button>
+      <button onclick="resetSimulation()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition shadow-md flex items-center gap-1">
+        🔄 Reiniciar
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 p-2 md:p-4 max-w-7xl mx-auto w-full flex flex-col gap-4">
+
+    <!-- PESTAÑA 1: SIMULADOR PRINCIPAL -->
+    <div id="view-sim" class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
+
+      <!-- COLUMNA IZQUIERDA: CONTROLES & DEPÓSITOS -->
+      <div class="lg:col-span-3 flex flex-col gap-4">
+        
+        <!-- Panel de Ajuste Manual de Partículas -->
+        <div class="jtp-card p-4 rounded-xl border border-slate-700">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+            <span>Partículas en el Núcleo</span>
+            <span class="text-xs font-normal text-amber-400 font-mono">Z ≤ 118</span>
+          </h2>
+
+          <!-- Control de Protones (Z) -->
+          <div class="bg-rose-950/40 border border-rose-800/60 rounded-xl p-3 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-rose-300 text-sm flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-rose-500 inline-block shadow"></span>
+                Protones (Z)
+              </span>
+              <span id="p-count-badge" class="font-mono text-xl font-bold text-rose-200 bg-rose-900/60 px-2.5 py-0.5 rounded border border-rose-700">6</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="adjustParticle('proton', -1)" class="bg-slate-800 hover:bg-rose-900/50 text-rose-300 font-bold border border-rose-700 py-1.5 rounded-lg text-base active:scale-95 transition shadow-sm">- 1 Protón</button>
+              <button onclick="adjustParticle('proton', 1)" class="bg-rose-600 hover:bg-rose-500 text-white font-bold py-1.5 rounded-lg text-base active:scale-95 transition shadow-sm">+ 1 Protón</button>
+            </div>
+          </div>
+
+          <!-- Control de Neutrones (N) -->
+          <div class="bg-sky-950/40 border border-sky-800/60 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-sky-300 text-sm flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-sky-500 inline-block shadow"></span>
+                Neutrones (N)
+              </span>
+              <span id="n-count-badge" class="font-mono text-xl font-bold text-sky-200 bg-sky-900/60 px-2.5 py-0.5 rounded border border-sky-700">6</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="adjustParticle('neutron', -1)" class="bg-slate-800 hover:bg-sky-900/50 text-sky-300 font-bold border border-sky-700 py-1.5 rounded-lg text-base active:scale-95 transition shadow-sm">- 1 Neutrón</button>
+              <button onclick="adjustParticle('neutron', 1)" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-1.5 rounded-lg text-base active:scale-95 transition shadow-sm">+ 1 Neutrón</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depósito interactivo de Clics -->
+        <div class="jtp-card p-4 rounded-xl border border-slate-700 flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Añadir Nucleones</h3>
+            
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div id="bucket-proton" tabindex="0" role="button" aria-label="Añadir Protón" class="bucket-proton rounded-xl p-3 text-white flex flex-col items-center justify-center cursor-pointer active:scale-95 transition shadow-lg hover:brightness-110 min-h-[85px]" title="Haz clic o pulsa Enter para añadir un protón">
+                <div class="w-8 h-8 rounded-full bg-white text-rose-600 font-black text-xl flex items-center justify-center shadow mb-1">+</div>
+                <span class="text-xs font-extrabold drop-shadow">Añadir Protón</span>
+              </div>
+
+              <div id="bucket-neutron" tabindex="0" role="button" aria-label="Añadir Neutrón" class="bucket-neutron rounded-xl p-3 text-white flex flex-col items-center justify-center cursor-pointer active:scale-95 transition shadow-lg hover:brightness-110 min-h-[85px]" title="Haz clic o pulsa Enter para añadir un neutrón">
+                <div class="w-8 h-8 rounded-full bg-white text-sky-600 font-bold text-sm flex items-center justify-center shadow mb-1">nº</div>
+                <span class="text-xs font-extrabold drop-shadow">Añadir Neutrón</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Presets Rápidos Extendidos -->
+          <div class="mt-4 pt-3 border-t border-slate-700">
+            <span class="text-xs font-semibold text-slate-400 block mb-2">Isótopos de Referencia & Emisores Múltiples:</span>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="loadPreset(1, 0)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">¹H</button>
+              <button onclick="loadPreset(1, 2)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">³H (β⁻)</button>
+              <button onclick="loadPreset(2, 2)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">⁴He (α)</button>
+              <button onclick="loadPreset(6, 6)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">¹²C</button>
+              <button onclick="loadPreset(6, 8)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">¹⁴C (β⁻)</button>
+              <button onclick="loadPreset(11, 11)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">²²Na (β⁺γ)</button>
+              <button onclick="loadPreset(19, 21)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">⁴⁰K (🔀β⁻/β⁺)</button>
+              <button onclick="loadPreset(26, 19)" class="text-xs bg-rose-950 hover:bg-amber-400 hover:text-slate-950 text-rose-300 border border-rose-700 rounded-md px-2 py-1 font-bold transition">⁴⁵Fe (⚡2p⁺)</button>
+              <button onclick="loadPreset(27, 33)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">⁶⁰Co (β⁻γ)</button>
+              <button onclick="loadPreset(32, 44)" class="text-xs bg-sky-950 hover:bg-amber-400 hover:text-slate-950 text-sky-300 border border-sky-700 rounded-md px-2 py-1 font-bold transition">⁷⁶Ge (⚡2β⁻)</button>
+              <button onclick="loadPreset(34, 48)" class="text-xs bg-sky-950 hover:bg-amber-400 hover:text-slate-950 text-sky-300 border border-sky-700 rounded-md px-2 py-1 font-bold transition">⁸²Se (⚡2β⁻)</button>
+              <button onclick="loadPreset(43, 56)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">⁹⁹ᵐTc (γ)</button>
+              <button onclick="loadPreset(53, 78)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">¹³¹I (β⁻γ)</button>
+              <button onclick="loadPreset(55, 82)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">¹³⁷Cs (β⁻γ)</button>
+              <button onclick="loadPreset(82, 126)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">²⁰⁸Pb</button>
+              <button onclick="loadPreset(83, 129)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">²¹²Bi (🔀β⁻/α)</button>
+              <button onclick="loadPreset(88, 138)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">²²⁶Ra (αγ)</button>
+              <button onclick="loadPreset(92, 146)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">²³⁸U (αγ)</button>
+              <button onclick="loadPreset(118, 176)" class="text-xs bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-300 border border-slate-600 rounded-md px-2 py-1 font-medium transition">²⁹⁴Og (α)</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUMNA CENTRAL: CANVAS DEL NÚCLEO Y HISTORIAL FIJO -->
+      <div class="lg:col-span-6 flex flex-col gap-4">
+        
+        <!-- LIENZO NÚCLEO -->
+        <div class="jtp-card rounded-xl border border-slate-700 overflow-hidden flex flex-col relative min-h-[360px]">
+          
+          <!-- Barra superior del lienzo -->
+          <div class="bg-slate-900 px-4 py-2 text-xs flex justify-between items-center border-b border-slate-800">
+            <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Cúmulo Nuclear (Fuerza Nuclear Fuerte + Repulsión Coulombiana)
+            </span>
+            <div class="flex items-center space-x-3">
+              <label class="flex items-center gap-1 cursor-pointer text-slate-300 hover:text-white">
+                <input type="checkbox" id="chk-signs" checked class="rounded accent-amber-400">
+                <span>Cargas (+ / n)</span>
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer text-slate-300 hover:text-white">
+                <input type="checkbox" id="chk-vibe" checked class="rounded accent-amber-400">
+                <span>Vibración</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Canvas interactivo -->
+          <div class="flex-1 relative bg-slate-950 flex items-center justify-center overflow-hidden min-h-[260px]">
+            <canvas id="nucleus-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+            <!-- Leyenda flotante en canvas -->
+            <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur text-xs px-3 py-2 rounded-lg border border-slate-700 space-y-1 shadow">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-rose-500 border border-rose-300 inline-block"></span>
+                <span class="text-slate-200">Protón (p⁺, q = +1)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-sky-500 border border-sky-300 inline-block"></span>
+                <span class="text-slate-200">Neutrón (nº, q = 0)</span>
+              </div>
+              <div class="flex items-center gap-2 pt-0.5">
+                <span class="w-3 h-3 rounded-full bg-amber-400 border border-yellow-200 inline-block animate-pulse"></span>
+                <span class="text-amber-300 font-bold">Fotón Gamma (γ) / Electrón (e⁻)</span>
+              </div>
+            </div>
+
+            <!-- Escala aproximada -->
+            <div class="absolute top-3 left-3 bg-slate-900/90 backdrop-blur text-slate-300 text-[11px] px-2.5 py-1 rounded border border-slate-700 font-mono shadow">
+              Radio R ≈ <span id="radius-val" class="text-amber-300 font-bold">0.0</span> fm
+            </div>
+          </div>
+
+          <!-- Pie del lienzo: Gatillo de Desintegración -->
+          <div class="p-3 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <button id="btn-decay" onclick="triggerDecay()" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-4 py-2 rounded-xl text-sm shadow transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
+                <span>⚡ Desintegrar Ahora</span>
+              </button>
+              <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-300 cursor-pointer">
+                <input type="checkbox" id="chk-auto-decay" class="accent-amber-400 rounded">
+                <span>Emisión Automática</span>
+              </label>
+            </div>
+            <span class="text-xs text-slate-400 italic" id="decay-hint">Genera un isótopo inestable para activar radiación.</span>
+          </div>
+
+        </div>
+
+        <!-- PANEL FIJO PERMANENTE: HISTORIAL DE DESINTEGRACIÓN / REGISTRO RADIACTIVO -->
+        <div class="jtp-card rounded-xl border border-slate-700 p-4 flex flex-col h-64 shadow-md">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-base">📜</span>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-amber-300">Historial de Desintegración / Registro Radiactivo</h3>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span id="history-count-badge" class="bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded border border-slate-700 font-mono">0 eventos</span>
+              <button onclick="clearHistory()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs px-2.5 py-1 rounded-lg border border-slate-600 font-semibold transition" title="Limpiar historial registrado">
+                🗑️ Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla scrollable con sticky header -->
+          <div id="history-scroll-container" class="flex-1 overflow-y-auto pr-1 relative">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-900 text-slate-400 border-b border-slate-700 font-semibold uppercase tracking-wider sticky top-0 z-10">
+                <tr>
+                  <th class="py-1.5 px-2">Paso</th>
+                  <th class="py-1.5 px-2">Padre (<sup>A</sup><sub>Z</sub>X)</th>
+                  <th class="py-1.5 px-2">Emisión & Partículas Simultáneas</th>
+                  <th class="py-1.5 px-2">Hijo Resultante (<sup>A'</sup><sub>Z'</sub>Y)</th>
+                  <th class="py-1.5 px-2 text-right">Estado Hijo</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body" class="divide-y divide-slate-800 font-medium">
+                <tr id="empty-history-row">
+                  <td colspan="5" class="py-8 text-center text-slate-500 italic">
+                    Aún no se ha realizado ninguna desintegración en este ciclo.<br>Añade nucleones e inicia una reacción radiactiva.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUMNA DERECHA: TARJETA DEL NÚCLIDO Y PROPIEDADES -->
+      <div class="lg:col-span-3 flex flex-col gap-4">
+        
+        <!-- Símbolo del Núclido A / Z X -->
+        <div class="jtp-card p-4 rounded-xl border border-slate-700 text-center flex flex-col items-center justify-between">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Símbolo Isotópico</h3>
+
+          <!-- Representación Simbólica Grande -->
+          <div class="my-2 flex items-center justify-center font-serif text-6xl font-bold tracking-tight text-slate-100">
+            <div class="flex flex-col text-right text-2xl font-sans font-black leading-none mr-2">
+              <span id="nuclide-A" class="text-amber-400 font-mono">12</span>
+              <span id="nuclide-Z" class="text-slate-400 text-xl font-mono mt-1">6</span>
+            </div>
+            <span id="nuclide-symbol" class="text-7xl font-black text-white drop-shadow">C</span>
+          </div>
+
+          <div id="nuclide-name" class="text-xl font-extrabold text-amber-300">Carbono-12</div>
+          <div id="nuclide-class" class="text-xs font-medium text-slate-400 mb-3">Elemento Químico #6</div>
+
+          <!-- Insignia de Estabilidad y Ramificación -->
+          <div id="stability-badge" class="w-full py-2 px-3 rounded-xl text-xs font-black flex flex-col items-center justify-center gap-1 transition-all shadow bg-emerald-950/80 text-emerald-300 border border-emerald-700">
+            <span>✅ NÚCLEO ESTABLE</span>
+          </div>
+        </div>
+
+        <!-- Propiedades Nucleares Detalladas -->
+        <div class="jtp-card p-4 rounded-xl border border-slate-700 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700 pb-1.5">Ficha Físico-Nuclear</h3>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block">Número de Masa (A)</span>
+              <span id="prop-A" class="text-base font-bold text-slate-100 font-mono">12</span>
+            </div>
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block">Masa Atómica</span>
+              <span id="prop-mass" class="text-base font-bold text-slate-100 font-mono">12.000 u</span>
+            </div>
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block">Relación N / Z</span>
+              <span id="prop-nz" class="text-base font-bold text-slate-100 font-mono">1.00</span>
+            </div>
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block">Vida Media (T<sub>1/2</sub>)</span>
+              <span id="prop-halflife" class="text-xs font-bold text-amber-300 font-mono truncate block">Estable (∞)</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-xl text-xs leading-relaxed text-slate-300" id="nuclide-desc">
+            El Carbono-12 es el estándar de masa atómica. Posee 6 protones y 6 neutrones.
+          </div>
+        </div>
+
+        <!-- Mini Visualizador Carta Segrè -->
+        <div class="jtp-card p-3 rounded-xl border border-slate-700 text-center">
+          <div class="flex justify-between items-center text-xs font-bold text-slate-400 mb-2">
+            <span>Ubicación Valle Estabilidad</span>
+            <button onclick="switchTab('segre')" class="text-amber-400 hover:underline">Ver mapa →</button>
+          </div>
+          <div class="w-full h-24 bg-slate-950 rounded-lg border border-slate-800 relative overflow-hidden flex items-center justify-center">
+            <canvas id="mini-segre-canvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- PESTAÑA 2: CARTA DE SEGRÈ COMPLETA (N vs Z) -->
+    <div id="view-segre" class="hidden flex-1 flex-col gap-4">
+      <div class="jtp-card p-4 rounded-xl border border-slate-700">
+        <div class="flex flex-wrap justify-between items-center mb-3 pb-2 border-b border-slate-700 gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Carta de Nucléidos (Mapa de Segrè: Neutrones N vs Protones Z)</h2>
+            <p class="text-xs text-slate-400">Pasa el ratón sobre cualquier celda para inspeccionar el isótopo en tiempo real. Haz clic para cargarlo en la simulación (Mapa Z = 0 a 118, N = 0 a 180).</p>
+          </div>
+          <!-- Leyenda de colores -->
+          <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-300">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-500 rounded"></span> Estable</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-blue-500 rounded"></span> Beta Menos (β⁻)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-orange-500 rounded"></span> Beta Más (β⁺/EC)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-purple-500 rounded"></span> Alfa (α)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-amber-400 rounded"></span> Gamma / Isómero</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-cyan-400 rounded"></span> Doble Beta (2β⁻)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-rose-500 rounded"></span> Emisión 2p / 2n</span>
+          </div>
+        </div>
+
+        <!-- Canvas Principal de Segrè con Tooltip Flotante -->
+        <div id="segre-container" class="w-full overflow-auto bg-slate-950 rounded-xl p-3 border border-slate-800 flex justify-center max-h-[580px] relative">
+          <canvas id="segre-full-canvas" width="1800" height="1300" class="block cursor-pointer"></canvas>
+          <div id="segre-tooltip" class="pointer-events-none absolute hidden z-50 bg-slate-900/95 backdrop-blur-md border border-slate-700 shadow-2xl rounded-xl p-3.5 text-xs w-64 text-slate-200 transition-opacity duration-150"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: CONCEPTOS Y GUÍA EDUCATIVA -->
+    <div id="view-info" class="hidden flex-1 flex-col gap-4">
+      <div class="jtp-card p-6 rounded-xl border border-slate-700 space-y-6 max-w-4xl mx-auto">
+        <h2 class="text-2xl font-black text-amber-300 border-b border-slate-700 pb-3">Fundamentos de Física Nuclear, Ramificación y Emisiones Simultáneas</h2>
+
+        <div class="grid md:grid-cols-2 gap-6 text-sm text-slate-300 leading-relaxed">
+          <div class="space-y-2">
+            <h3 class="text-base font-bold text-amber-400">1. Estructura y Estabilidad del Núcleo</h3>
+            <p>
+              El núcleo atómico se compone de <strong>protones</strong> ($p^+$, carga $+1e$) y <strong>neutrones</strong> ($n^0$, neutros). La <strong>Fuerza Nuclear Fuerte</strong> supera la repulsión coulomiana en distancias ultra cortas ($\sim 1\text{ fm}$).
+            </p>
+            <p>
+              Para mantener la coherencia nuclear, los elementos ligeros requieren $N \approx Z$, mientras que los elementos pesados ($Z > 20$) necesitan un exceso de neutrones hasta $N/Z \approx 1.5$.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-base font-bold text-amber-400">2. Múltiples Vías y Ramificación Cuántica</h3>
+            <p>
+              Ciertos radionúclidos inestables (como el $^{40}\text{K}$, $^{64}\text{Cu}$ o $^{212}\text{Bi}$) tienen estados de energía que permiten competir entre diferentes vías de desintegración con porcentajes de probabilidad exactos.
+            </p>
+            <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-amber-300 font-mono text-xs my-2">
+              Ejemplo $^{40}\text{K}$: 89.3% $\beta^-$ $\rightarrow$ $^{40}\text{Ca}$ | 10.7% $\beta^+/\text{EC}$ $\rightarrow$ $^{40}\text{Ar}$
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-base font-bold text-amber-400">3. Emisiones Simultáneas Múltiples</h3>
+            <ul class="list-disc pl-5 text-slate-400 space-y-1.5 text-xs">
+              <li><strong>$\beta^- + \gamma$ / $\alpha + \gamma$:</strong> Transición nuclear débil o alfa seguida inmediatamente ($\sim 10^{-12}\text{ s}$) de la expulsión de un fotón gamma para liberar la energía residual del estado excitado.</li>
+              <li><strong>Doble Beta ($2\beta^-$):</strong> Proceso extremadamente raro donde dos neutrones se convierten simultáneamente en dos protones, emitiendo dos electrones al mismo tiempo (ej. $^{82}\text{Se}$, $^{76}\text{Ge}$, $^{136}\text{Xe}$).</li>
+              <li><strong>Doble Protón ($2p^+$) / Doble Neutrón ($2n^0$):</strong> Expulsión directa simultánea de dos nucleones idénticos fuera de las líneas de goteo (ej. $^{45}\text{Fe}$, $^{16}\text{Be}$).</li>
+            </ul>
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-base font-bold text-amber-400">4. Valle de Estabilidad y Convergencia Monótona</h3>
+            <p>
+              Cada elemento $Z$ tiene un rango exacto de neutrones estables `STABLE_N_RANGES`. Cualquier isótopo inestable emite partículas para reducir su desviación $\Delta N$ y converger de manera monótona hacia la estabilidad sin caer en bucles cerrados u oscilantes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PIE DE PÁGINA -->
+  <footer class="bg-slate-950 text-slate-500 text-xs py-3 px-4 text-center border-t border-slate-800">
+    <p>Simulador Educativo JTP "Construye un Núcleo" • Modelo de Datos Exacto IUPAC (Z = 0 a 118) con Radiación α, β⁻, β⁺, γ, 2β⁻, 2p⁺, 2n⁰ y Ramificación Cuántica</p>
+  </footer>
+
+  <!-- SCRIPT LÓGICA Y SIMULACIÓN COMPLETA -->
+  <script>
+    // ==========================================
+    // 1. TABLA PERIÓDICA COMPLETA DE LA IUPAC (Z = 0 a 118)
+    // ==========================================
+    const ELEMENTS = [
+      { z: 0, symbol: 'n', name: 'Neutrón Libre' },
+      { z: 1, symbol: 'H', name: 'Hidrógeno' }, { z: 2, symbol: 'He', name: 'Helio' },
+      { z: 3, symbol: 'Li', name: 'Litio' }, { z: 4, symbol: 'Be', name: 'Berilio' },
+      { z: 5, symbol: 'B', name: 'Boro' }, { z: 6, symbol: 'C', name: 'Carbono' },
+      { z: 7, symbol: 'N', name: 'Nitrógeno' }, { z: 8, symbol: 'O', name: 'Oxígeno' },
+      { z: 9, symbol: 'F', name: 'Flúor' }, { z: 10, symbol: 'Ne', name: 'Neón' },
+      { z: 11, symbol: 'Na', name: 'Sodio' }, { z: 12, symbol: 'Mg', name: 'Magnesio' },
+      { z: 13, symbol: 'Al', name: 'Aluminio' }, { z: 14, symbol: 'Si', name: 'Silicio' },
+      { z: 15, symbol: 'P', name: 'Fósforo' }, { z: 16, symbol: 'S', name: 'Azufre' },
+      { z: 17, symbol: 'Cl', name: 'Cloro' }, { z: 18, symbol: 'Ar', name: 'Argón' },
+      { z: 19, symbol: 'K', name: 'Potasio' }, { z: 20, symbol: 'Ca', name: 'Calcio' },
+      { z: 21, symbol: 'Sc', name: 'Escandio' }, { z: 22, symbol: 'Ti', name: 'Titanio' },
+      { z: 23, symbol: 'V', name: 'Vanadio' }, { z: 24, symbol: 'Cr', name: 'Cromo' },
+      { z: 25, symbol: 'Mn', name: 'Manganeso' }, { z: 26, symbol: 'Fe', name: 'Hierro' },
+      { z: 27, symbol: 'Co', name: 'Cobalto' }, { z: 28, symbol: 'Ni', name: 'Níquel' },
+      { z: 29, symbol: 'Cu', name: 'Cobre' }, { z: 30, symbol: 'Zn', name: 'Cinc' },
+      { z: 31, symbol: 'Ga', name: 'Galio' }, { z: 32, symbol: 'Ge', name: 'Germanio' },
+      { z: 33, symbol: 'As', name: 'Arsénico' }, { z: 34, symbol: 'Se', name: 'Selenio' },
+      { z: 35, symbol: 'Br', name: 'Bromo' }, { z: 36, symbol: 'Kr', name: 'Criptón' },
+      { z: 37, symbol: 'Rb', name: 'Rubidio' }, { z: 38, symbol: 'Sr', name: 'Estroncio' },
+      { z: 39, symbol: 'Y', name: 'Itrio' }, { z: 40, symbol: 'Zr', name: 'Circonio' },
+      { z: 41, symbol: 'Nb', name: 'Niobio' }, { z: 42, symbol: 'Mo', name: 'Molibdeno' },
+      { z: 43, symbol: 'Tc', name: 'Tecnecio' }, { z: 44, symbol: 'Ru', name: 'Rutenio' },
+      { z: 45, symbol: 'Rh', name: 'Rodio' }, { z: 46, symbol: 'Pd', name: 'Paladio' },
+      { z: 47, symbol: 'Ag', name: 'Plata' }, { z: 48, symbol: 'Cd', name: 'Cadmio' },
+      { z: 49, symbol: 'In', name: 'Indio' }, { z: 50, symbol: 'Sn', name: 'Estaño' },
+      { z: 51, symbol: 'Sb', name: 'Antimonio' }, { z: 52, symbol: 'Te', name: 'Telurio' },
+      { z: 53, symbol: 'I', name: 'Yodo' }, { z: 54, symbol: 'Xe', name: 'Xenón' },
+      { z: 55, symbol: 'Cs', name: 'Cesio' }, { z: 56, symbol: 'Ba', name: 'Bario' },
+      { z: 57, symbol: 'La', name: 'Lantano' }, { z: 58, symbol: 'Ce', name: 'Cerio' },
+      { z: 59, symbol: 'Pr', name: 'Praseodimio' }, { z: 60, symbol: 'Nd', name: 'Neodimio' },
+      { z: 61, symbol: 'Pm', name: 'Prometio' }, { z: 62, symbol: 'Sm', name: 'Samario' },
+      { z: 63, symbol: 'Eu', name: 'Europio' }, { z: 64, symbol: 'Gd', name: 'Gadolinio' },
+      { z: 65, symbol: 'Tb', name: 'Terbio' }, { z: 66, symbol: 'Dy', name: 'Disprosio' },
+      { z: 67, symbol: 'Ho', name: 'Holmio' }, { z: 68, symbol: 'Er', name: 'Erbio' },
+      { z: 69, symbol: 'Tm', name: 'Tulio' }, { z: 70, symbol: 'Yb', name: 'Iterbio' },
+      { z: 71, symbol: 'Lu', name: 'Lutecio' }, { z: 72, symbol: 'Hf', name: 'Hafnio' },
+      { z: 73, symbol: 'Ta', name: 'Tantalio' }, { z: 74, symbol: 'W', name: 'Wolframio' },
+      { z: 75, symbol: 'Re', name: 'Renio' }, { z: 76, symbol: 'Os', name: 'Osmio' },
+      { z: 77, symbol: 'Ir', name: 'Iridio' }, { z: 78, symbol: 'Pt', name: 'Platino' },
+      { z: 79, symbol: 'Au', name: 'Oro' }, { z: 80, symbol: 'Hg', name: 'Mercurio' },
+      { z: 81, symbol: 'Tl', name: 'Talio' }, { z: 82, symbol: 'Pb', name: 'Plomo' },
+      { z: 83, symbol: 'Bi', name: 'Bismuto' }, { z: 84, symbol: 'Po', name: 'Polonio' },
+      { z: 85, symbol: 'At', name: 'Astato' }, { z: 86, symbol: 'Rn', name: 'Radón' },
+      { z: 87, symbol: 'Fr', name: 'Francio' }, { z: 88, symbol: 'Ra', name: 'Radio' },
+      { z: 89, symbol: 'Ac', name: 'Actinio' }, { z: 90, symbol: 'Th', name: 'Torio' },
+      { z: 91, symbol: 'Pa', name: 'Protactinio' }, { z: 92, symbol: 'U', name: 'Uranio' },
+      { z: 93, symbol: 'Np', name: 'Neptunio' }, { z: 94, symbol: 'Pu', name: 'Plutonio' },
+      { z: 95, symbol: 'Am', name: 'Americio' }, { z: 96, symbol: 'Cm', name: 'Curio' },
+      { z: 97, symbol: 'Bk', name: 'Berkelio' }, { z: 98, symbol: 'Cf', name: 'Californio' },
+      { z: 99, symbol: 'Es', name: 'Einstenio' }, { z: 100, symbol: 'Fm', name: 'Fermio' },
+      { z: 101, symbol: 'Md', name: 'Mendelevio' }, { z: 102, symbol: 'No', name: 'Nobelio' },
+      { z: 103, symbol: 'Lr', name: 'Laurencio' }, { z: 104, symbol: 'Rf', name: 'Rutherfordio' },
+      { z: 105, symbol: 'Db', name: 'Dubnio' }, { z: 106, symbol: 'Sg', name: 'Seaborgio' },
+      { z: 107, symbol: 'Bh', name: 'Bohrio' }, { z: 108, symbol: 'Hs', name: 'Hasio' },
+      { z: 109, symbol: 'Mt', name: 'Meitnerio' }, { z: 110, symbol: 'Ds', name: 'Darmstadtio' },
+      { z: 111, symbol: 'Rg', name: 'Roentgenio' }, { z: 112, symbol: 'Cn', name: 'Copernicio' },
+      { z: 113, symbol: 'Nh', name: 'Nihonio' }, { z: 114, symbol: 'Fl', name: 'Flerovio' },
+      { z: 115, symbol: 'Mc', name: 'Moscovio' }, { z: 116, symbol: 'Lv', name: 'Livermorio' },
+      { z: 117, symbol: 'Ts', name: 'Teneso' }, { z: 118, symbol: 'Og', name: 'Oganesón' }
+    ];
+
+    // ==========================================
+    // 2. RANGOS EXACTOS DE NEUTRONES ESTABLES POR ELEMENTO (STABLE_N_RANGES)
+    // Garantiza prevención absoluta de bucles de desintegración
+    // ==========================================
+    const STABLE_N_RANGES = {
+      0: [],
+      1: [0, 1],                // H-1, H-2
+      2: [1, 2],                // He-3, He-4
+      3: [3, 4],                // Li-6, Li-7
+      4: [5],                   // Be-9
+      5: [5, 6],                // B-10, B-11
+      6: [6, 7],                // C-12, C-13
+      7: [7, 8],                // N-14, N-15
+      8: [8, 9, 10],            // O-16, O-17, O-18
+      9: [10],                  // F-19
+      10: [10, 11, 12],         // Ne-20, Ne-21, Ne-22
+      11: [12],                 // Na-23
+      12: [12, 13, 14],         // Mg-24, Mg-25, Mg-26
+      13: [14],                 // Al-27
+      14: [14, 15, 16],         // Si-28, Si-29, Si-30
+      15: [16],                 // P-31
+      16: [16, 17, 18, 20],     // S-32, S-33, S-34, S-36
+      17: [18, 20],             // Cl-35, Cl-37
+      18: [18, 20, 22],         // Ar-36, Ar-38, Ar-40
+      19: [20, 22],             // K-39, K-41
+      20: [20, 22, 23, 24, 26, 28], // Ca-40, Ca-42, Ca-43, Ca-44, Ca-46, Ca-48
+      21: [24],                 // Sc-45
+      22: [24, 25, 26, 27, 28], // Ti-46..50
+      23: [28],                 // V-51
+      24: [26, 28, 29, 30],     // Cr-50, 52, 53, 54
+      25: [30],                 // Mn-55
+      26: [28, 30, 31, 32],     // Fe-54, Fe-56, Fe-57, Fe-58
+      27: [32],                 // Co-59
+      28: [30, 32, 33, 34, 36], // Ni-58, Ni-60, Ni-61, Ni-62, Ni-64
+      29: [34, 36],             // Cu-63, Cu-65
+      30: [34, 36, 37, 38, 40], // Zn-64, Zn-66, Zn-67, Zn-68, Zn-70
+      31: [38, 40],             // Ga-69, Ga-71
+      32: [38, 40, 41, 42, 44], // Ge-70, Ge-72, Ge-73, Ge-74, Ge-76
+      33: [42],                 // As-75
+      34: [40, 42, 43, 44, 46, 48], // Se-74, 76, 77, 78, 80, 82
+      35: [44, 46],             // Br-79, Br-81
+      36: [42, 44, 46, 47, 48, 50], // Kr-78..86
+      37: [48],                 // Rb-85
+      38: [46, 48, 49, 50],     // Sr-84, 86, 87, 88
+      39: [50],                 // Y-89
+      40: [50, 51, 52, 54, 56], // Zr-90..96
+      41: [52],                 // Nb-93
+      42: [50, 52, 53, 54, 55, 56, 58], // Mo-92..100
+      43: [],                   // Tc (sin estables)
+      44: [52, 54, 55, 56, 57, 58, 60], // Ru-96..104
+      45: [58],                 // Rh-103
+      46: [56, 58, 59, 60, 62, 64], // Pd-102..110
+      47: [60, 62],             // Ag-107, Ag-109
+      48: [58, 60, 62, 63, 64, 65, 66, 68], // Cd-106..116
+      49: [66],                 // In-115
+      50: [62, 64, 65, 66, 67, 68, 69, 70, 72, 74], // Sn-112..124
+      51: [70, 72],             // Sb-121, Sb-123
+      52: [68, 70, 72, 73, 74, 75, 76, 78], // Te-120..130
+      53: [74],                 // I-127
+      54: [70, 72, 74, 75, 76, 77, 78, 80, 82], // Xe-124..136
+      55: [78],                 // Cs-133
+      56: [74, 76, 78, 79, 80, 81, 82], // Ba-130..138
+      57: [82],                 // La-139
+      58: [78, 80, 82, 84],     // Ce-136, 138, 140, 142
+      59: [82],                 // Pr-141
+      60: [82, 83, 84, 85, 86, 88, 90], // Nd-142..150
+      61: [],                   // Pm (sin estables)
+      62: [82, 86, 88, 90, 92], // Sm-144..154
+      63: [90],                 // Eu-153
+      64: [88, 90, 91, 92, 94, 96, 98], // Gd-152..160
+      65: [94],                 // Tb-159
+      66: [90, 92, 94, 95, 96, 97, 98], // Dy-156..164
+      67: [98],                 // Ho-165
+      68: [94, 96, 98, 99, 100, 102], // Er-162..170
+      69: [100],                // Tm-169
+      70: [98, 100, 101, 102, 103, 104, 106], // Yb-168..176
+      71: [104],                // Lu-175
+      72: [102, 104, 105, 106, 107, 108], // Hf-174..180
+      73: [108],                // Ta-181
+      74: [106, 108, 109, 110, 112], // W-180..186
+      75: [112],                // Re-187
+      76: [108, 110, 112, 113, 114, 116, 118], // Os-184..192
+      77: [114, 116],           // Ir-191, Ir-193
+      78: [112, 114, 115, 116, 118, 120], // Pt-190..198
+      79: [118],                // Au-197
+      80: [116, 118, 119, 120, 121, 122, 124], // Hg-196..204
+      81: [122, 124],           // Tl-203, Tl-205
+      82: [122, 124, 125, 126]  // Pb-204, Pb-206, Pb-207, Pb-208
+    };
+
+    // ==========================================
+    // 3. BASE DE DATOS EXTENSA DE ISÓTOPOS
+    // ==========================================
+    const ISOTOPE_DB = {
+      '0_1': { stable: false, decay: 'beta_minus', halflife: '10.2 min', desc: 'Un neutrón libre es inestable y se desintegra por interacción débil.' },
+      '1_0': { stable: true, halflife: 'Estable (∞)', desc: 'Protón aislado (Hidrógeno-1), núcleo estable sin neutrones.' },
+      '1_1': { stable: true, halflife: 'Estable (∞)', desc: 'Deuterio (²H), isótopo estable del hidrógeno.' },
+      '1_2': { stable: false, decay: 'beta_minus', halflife: '12.32 años', desc: 'Tritio (³H), radioisótopo emisor β⁻ utilizado en fuentes luminosas.' },
+      '2_1': { stable: true, halflife: 'Estable (∞)', desc: 'Helio-3 (³He), isótopo estable ligero del helio.' },
+      '2_2': { stable: true, halflife: 'Estable (∞)', desc: 'Helio-4 (Partícula Alfa), núcleo con energía de enlace muy alta.' },
+      '3_3': { stable: true, halflife: 'Estable (∞)', desc: 'Litio-6, isótopo estable ligero del litio.' },
+      '3_4': { stable: true, halflife: 'Estable (∞)', desc: 'Litio-7, constituye el 92.4% del litio natural.' },
+      '4_4': { stable: false, decay: 'alpha', halflife: '8.19×10⁻¹⁷ s', desc: 'Berilio-8, se fisiona casi instantáneamente en dos partículas alfa.' },
+      '4_5': { stable: true, halflife: 'Estable (∞)', desc: 'Berilio-9, único isótopo estable del berilio.' },
+      '4_12': { stable: false, decay: 'double_neutron', halflife: '< 200 fs', desc: 'Berilio-16, emisor simultáneo de dos neutrones (2nº).' },
+      '5_5': { stable: true, halflife: 'Estable (∞)', desc: 'Boro-10, isótopo estable absorbente de neutrones.' },
+      '5_6': { stable: true, halflife: 'Estable (∞)', desc: 'Boro-11, constituye el 80% del boro natural.' },
+      '6_6': { stable: true, halflife: 'Estable (∞)', desc: 'Carbono-12, patrón de referencia de masa atómica con 6p y 6n.' },
+      '6_7': { stable: true, halflife: 'Estable (∞)', desc: 'Carbono-13, isótopo estable trazador en espectroscopía NMR.' },
+      '6_8': { stable: false, decay: 'beta_minus', halflife: '5730 años', desc: 'Carbono-14, emisor β⁻ fundamental en la datación por radiocarbono.' },
+      '7_7': { stable: true, halflife: 'Estable (∞)', desc: 'Nitrógeno-14, constituye el 99.6% del nitrógeno atmosférico.' },
+      '7_8': { stable: true, halflife: 'Estable (∞)', desc: 'Nitrógeno-15, isótopo estable minoritario.' },
+      '8_8': { stable: true, halflife: 'Estable (∞)', desc: 'Oxígeno-16, núcleo doblemente mágico súper estable.' },
+      '8_9': { stable: true, halflife: 'Estable (∞)', desc: 'Oxígeno-17, isótopo estable activo en RMN.' },
+      '8_10': { stable: true, halflife: 'Estable (∞)', desc: 'Oxígeno-18, isótopo estable trazador ambiental.' },
+      '9_10': { stable: true, halflife: 'Estable (∞)', desc: 'Flúor-19, único isótopo estable del flúor.' },
+      '10_10': { stable: true, halflife: 'Estable (∞)', desc: 'Neón-20, isótopo estable principal del neón.' },
+      '10_11': { stable: true, halflife: 'Estable (∞)', desc: 'Neón-21, isótopo estable del neón.' },
+      '10_12': { stable: true, halflife: 'Estable (∞)', desc: 'Neón-22, isótopo estable abundante del neón.' },
+      '11_11': { stable: false, decay: 'beta_plus_gamma', halflife: '2.602 años', desc: 'Sodio-22, emisor β⁺ acoplado con radiación Gamma de 1.275 MeV.' },
+      '11_12': { stable: true, halflife: 'Estable (∞)', desc: 'Sodio-23, único isótopo estable del sodio.' },
+      '12_12': { stable: true, halflife: 'Estable (∞)', desc: 'Magnesio-24, isótopo estable abundante.' },
+      '12_13': { stable: true, halflife: 'Estable (∞)', desc: 'Magnesio-25, isótopo estable del magnesio.' },
+      '12_14': { stable: true, halflife: 'Estable (∞)', desc: 'Magnesio-26, isótopo estable abundante.' },
+      '13_14': { stable: true, halflife: 'Estable (∞)', desc: 'Aluminio-27, único isótopo estable del aluminio.' },
+      '14_14': { stable: true, halflife: 'Estable (∞)', desc: 'Silicio-28, isótopo estable principal del silicio.' },
+      '14_15': { stable: true, halflife: 'Estable (∞)', desc: 'Silicio-29, isótopo estable con spin 1/2.' },
+      '14_16': { stable: true, halflife: 'Estable (∞)', desc: 'Silicio-30, isótopo estable del silicio.' },
+      '15_16': { stable: true, halflife: 'Estable (∞)', desc: 'Fósforo-31, único isótopo estable del fósforo.' },
+      '15_17': { stable: false, decay: 'beta_minus', halflife: '14.26 días', desc: 'Fósforo-32, radioisótopo emisor β⁻ utilizado en medicina e investigación.' },
+      '16_16': { stable: true, halflife: 'Estable (∞)', desc: 'Azufre-32, isótopo estable mayoritario del azufre.' },
+      '16_17': { stable: true, halflife: 'Estable (∞)', desc: 'Azufre-33, isótopo estable del azufre.' },
+      '16_18': { stable: true, halflife: 'Estable (∞)', desc: 'Azufre-34, isótopo estable secundario del azufre.' },
+      '16_20': { stable: true, halflife: 'Estable (∞)', desc: 'Azufre-36, isótopo estable poco común.' },
+      '17_18': { stable: true, halflife: 'Estable (∞)', desc: 'Cloro-35, constituye el 75.8% del cloro natural.' },
+      '17_19': { stable: false, decay: 'beta_minus', halflife: '3.01×10⁵ años', desc: 'Cloro-36, radioisótopo con ramificación β⁻ (98.1%) y β⁺/CE (1.9%).' },
+      '17_20': { stable: true, halflife: 'Estable (∞)', desc: 'Cloro-37, constituye el 24.2% del cloro natural.' },
+      '18_18': { stable: true, halflife: 'Estable (∞)', desc: 'Argón-36, isótopo estable del argón.' },
+      '18_20': { stable: true, halflife: 'Estable (∞)', desc: 'Argón-38, isótopo estable del argón.' },
+      '18_22': { stable: true, halflife: 'Estable (∞)', desc: 'Argón-40, constituye el 99.6% del argón terrestre.' },
+      '19_20': { stable: true, halflife: 'Estable (∞)', desc: 'Potasio-39, isótopo estable mayoritario.' },
+      '19_21': { stable: false, decay: 'beta_minus', halflife: '1.248×10⁹ años', desc: 'Potasio-40, radioisótopo primordial de la Tierra con ramificación β⁻ y β⁺.' },
+      '19_22': { stable: true, halflife: 'Estable (∞)', desc: 'Potasio-41, isótopo estable de potasio.' },
+      '20_20': { stable: true, halflife: 'Estable (∞)', desc: 'Calcio-40, núcleo doblemente mágico estable.' },
+      '20_22': { stable: true, halflife: 'Estable (∞)', desc: 'Calcio-42, isótopo estable de calcio.' },
+      '20_23': { stable: true, halflife: 'Estable (∞)', desc: 'Calcio-43, isótopo estable de calcio.' },
+      '20_24': { stable: true, halflife: 'Estable (∞)', desc: 'Calcio-44, isótopo estable abundante.' },
+      '20_26': { stable: true, halflife: 'Estable (∞)', desc: 'Calcio-46, isótopo estable muy raro.' },
+      '20_28': { stable: true, halflife: 'Estable (∞)', desc: 'Calcio-48, núcleo pesado rico en neutrones doblemente mágico.' },
+      '26_19': { stable: false, decay: 'double_proton', halflife: '2.5 ms', desc: 'Hierro-45, radioisótopo exótico emisor simultáneo de dos protones (2p⁺).' },
+      '26_28': { stable: true, halflife: 'Estable (∞)', desc: 'Hierro-54, isótopo estable del hierro.' },
+      '26_30': { stable: true, halflife: 'Estable (∞)', desc: 'Hierro-56, cúspide de la energía de enlace por nucleón.' },
+      '26_31': { stable: true, halflife: 'Estable (∞)', desc: 'Hierro-57, utilizado en espectroscopía Mössbauer.' },
+      '26_32': { stable: true, halflife: 'Estable (∞)', desc: 'Hierro-58, isótopo estable del hierro.' },
+      '27_32': { stable: true, halflife: 'Estable (∞)', desc: 'Cobalto-59, único isótopo estable del cobalto.' },
+      '27_33': { stable: false, decay: 'beta_minus_gamma', halflife: '5.271 años', desc: 'Cobalto-60, emisor β⁻ acoplado con intensos rayos Gamma (γ) simultáneos.' },
+      '28_30': { stable: true, halflife: 'Estable (∞)', desc: 'Níquel-58, isótopo estable más abundante del níquel.' },
+      '28_32': { stable: true, halflife: 'Estable (∞)', desc: 'Níquel-60, isótopo estable abundante.' },
+      '28_33': { stable: true, halflife: 'Estable (∞)', desc: 'Níquel-61, isótopo estable con spin 3/2.' },
+      '28_34': { stable: true, halflife: 'Estable (∞)', desc: 'Níquel-62, la mayor energía de enlace nuclear por nucleón.' },
+      '28_36': { stable: true, halflife: 'Estable (∞)', desc: 'Níquel-64, isótopo estable rico en neutrones.' },
+      '29_34': { stable: true, halflife: 'Estable (∞)', desc: 'Cobre-63, isótopo estable mayoritario del cobre.' },
+      '29_35': { stable: false, decay: 'beta_plus', halflife: '12.7 horas', desc: 'Cobre-64, radioisótopo médico ramificado (39.0% β⁻ / 61.0% β⁺/CE).' },
+      '29_36': { stable: true, halflife: 'Estable (∞)', desc: 'Cobre-65, isótopo estable de cobre.' },
+      '30_34': { stable: true, halflife: 'Estable (∞)', desc: 'Cinc-64, isótopo estable principal del cinc.' },
+      '30_36': { stable: true, halflife: 'Estable (∞)', desc: 'Cinc-66, isótopo estable de cinc.' },
+      '30_37': { stable: true, halflife: 'Estable (∞)', desc: 'Cinc-67, isótopo estable con spin 5/2.' },
+      '30_38': { stable: true, halflife: 'Estable (∞)', desc: 'Cinc-68, isótopo estable de cinc.' },
+      '30_40': { stable: true, halflife: 'Estable (∞)', desc: 'Cinc-70, isótopo estable raro.' },
+      '32_44': { stable: false, decay: 'double_beta_minus', halflife: '1.92×10²¹ años', desc: 'Germanio-76, emisor simultáneo de doble beta (2β⁻).' },
+      '34_48': { stable: false, decay: 'double_beta_minus', halflife: '9.6×10¹⁹ años', desc: 'Selenio-82, emisor simultáneo de doble beta (2β⁻).' },
+      '35_45': { stable: false, decay: 'beta_minus', halflife: '17.68 min', desc: 'Bromo-80, muestra ramificación dual β⁻ (91.7%) y β⁺/CE (8.3%).' },
+      '43_56': { stable: false, decay: 'gamma', halflife: '6.01 horas', desc: 'Tecnecio-99m, estado isomérico metaestable; emite fotones Gamma (γ) desexcitándose a Tc-99 (β⁻).' },
+      '53_73': { stable: false, decay: 'beta_minus', halflife: '13.01 días', desc: 'Yodo-126, radioisótopo ramificado (56.3% β⁻ y 43.7% β⁺/CE).' },
+      '53_78': { stable: false, decay: 'beta_minus_gamma', halflife: '8.02 días', desc: 'Yodo-131, emisor β⁻ y Gamma (γ) simultáneos para la tiroides.' },
+      '55_82': { stable: false, decay: 'beta_minus_gamma', halflife: '30.17 años', desc: 'Cesio-137, emisor β⁻ acoplado con fotodesintegración Gamma (γ).' },
+      '82_122': { stable: true, halflife: 'Estable (∞)', desc: 'Plomo-204, isótopo primordial estable del plomo.' },
+      '82_124': { stable: true, halflife: 'Estable (∞)', desc: 'Plomo-206, producto final estable de la cadena del Uranio.' },
+      '82_125': { stable: true, halflife: 'Estable (∞)', desc: 'Plomo-207, producto final estable de la cadena del Actinio.' },
+      '82_126': { stable: true, halflife: 'Estable (∞)', desc: 'Plomo-208, núcleo pesado doblemente mágico con 82p y 126n.' },
+      '83_126': { stable: false, decay: 'alpha', halflife: '2.01×10¹⁹ años', desc: 'Bismuto-209, emisor alfa de vida media extremadamente larga.' },
+      '83_129': { stable: false, decay: 'beta_minus', halflife: '60.55 min', desc: 'Bismuto-212, radioisótopo natural emisor ramificado (64.06% β⁻ / 35.94% α).' },
+      '88_138': { stable: false, decay: 'alpha_gamma', halflife: '1600 años', desc: 'Radio-226, emisor alfa acoplado a fotones Gamma (γ) simultáneos.' },
+      '92_143': { stable: false, decay: 'alpha_gamma', halflife: '7.04×10⁸ años', desc: 'Uranio-235, emisor alfa y gamma simultáneo primordial.' },
+      '92_146': { stable: false, decay: 'alpha_gamma', halflife: '4.47×10⁹ años', desc: 'Uranio-238, isótopo masivo terrestre emisor α y γ simultáneos.' },
+      '118_176': { stable: false, decay: 'alpha', halflife: '0.7 ms', desc: 'Oganesón-294, el elemento sintético más pesado conocido.' }
+    };
+
+    // ==========================================
+    // 4. MAPA DE RAMIFICACIÓN CUÁNTICA CON PORCENTAJES EXACTOS
+    // ==========================================
+    const BRANCHING_RATIOS = {
+      '17_19': [ { mode: 'beta_minus', prob: 0.981 }, { mode: 'beta_plus', prob: 0.019 } ],  // Cl-36
+      '19_21': [ { mode: 'beta_minus', prob: 0.893 }, { mode: 'beta_plus_gamma', prob: 0.107 } ], // K-40
+      '29_35': [ { mode: 'beta_plus', prob: 0.610 }, { mode: 'beta_minus', prob: 0.390 } ],   // Cu-64
+      '35_45': [ { mode: 'beta_minus', prob: 0.917 }, { mode: 'beta_plus', prob: 0.083 } ],   // Br-80
+      '53_73': [ { mode: 'beta_minus', prob: 0.563 }, { mode: 'beta_plus', prob: 0.437 } ],   // I-126
+      '83_129': [ { mode: 'beta_minus', prob: 0.6406 }, { mode: 'alpha', prob: 0.3594 } ],  // Bi-212
+      '83_128': [ { mode: 'alpha', prob: 0.9972 }, { mode: 'beta_minus', prob: 0.0028 } ],  // Bi-211
+      '85_126': [ { mode: 'beta_plus', prob: 0.582 }, { mode: 'alpha', prob: 0.418 } ]       // At-211
+    };
+
+    function getShortDecayName(code) {
+      switch (code) {
+        case 'beta_minus': return 'β⁻';
+        case 'beta_minus_gamma': return 'β⁻+γ';
+        case 'beta_plus': return 'β⁺/CE';
+        case 'beta_plus_gamma': return 'β⁺+γ';
+        case 'double_beta_minus': return '2β⁻';
+        case 'alpha': return 'α';
+        case 'alpha_gamma': return 'α+γ';
+        case 'gamma': return 'γ';
+        case 'proton_emission': return 'p⁺';
+        case 'double_proton': return '2p⁺';
+        case 'neutron_emission': return 'nº';
+        case 'double_neutron': return '2nº';
+        default: return 'Estable';
+      }
+    }
+
+    // ==========================================
+    // 5. MASA ATÓMICA SEMIEMPÍRICA (SEMF) & LÓGICA DE ESTABILIDAD ROBUSTA
+    // ==========================================
+    function getAtomicMass(Z, N, A) {
+      if (Z === 0 && N === 0) return "0.000";
+      if (Z === 0 && N === 1) return "1.009";
+      if (Z === 1 && N === 0) return "1.008";
+      if (Z === 6 && N === 6) return "12.000";
+
+      const mH = 1.007825;
+      const mn = 1.008665;
+      const av = 15.8, as = 18.3, ac = 0.714, aa = 23.2, ap = 12.0;
+      let delta = 0;
+      if (Z % 2 === 0 && N % 2 === 0) delta = ap / Math.sqrt(A);
+      else if (Z % 2 !== 0 && N % 2 !== 0) delta = -ap / Math.sqrt(A);
+
+      const bindingEnergyMeV = av * A - as * Math.pow(A, 2/3) - ac * (Z * Z) / Math.pow(A, 1/3) - aa * Math.pow(A - 2 * Z, 2) / A + delta;
+      const bindingEnergyU = Math.max(0, bindingEnergyMeV) * 0.00107241;
+      const mass = Z * mH + N * mn - bindingEnergyU;
+      return mass.toFixed(3);
+    }
+
+    function isNuclideBound(Z, N) {
+      if (Z === 0) return N === 1;
+      if (N === 0) return Z === 1;
+
+      const key = `${Z}_${N}`;
+      if (ISOTOPE_DB[key]) return true;
+
+      let nMin = Math.max(0, Math.floor(Z * 0.5 - 2));
+      let nMax = Math.min(180, Math.ceil(Z * 1.5 + 15));
+      return N >= nMin && N <= nMax;
+    }
+
+    function isStableNuclide(Z, N) {
+      if (STABLE_N_RANGES[Z] && STABLE_N_RANGES[Z].includes(N)) {
+        return true;
+      }
+      const key = `${Z}_${N}`;
+      if (ISOTOPE_DB[key] && ISOTOPE_DB[key].stable) {
+        return true;
+      }
+      return false;
+    }
+
+    function getIsotopeData(Z, N) {
+      if (Z === 0 && N === 0) {
+        return {
+          name: 'Núcleo Vacío',
+          symbol: '',
+          formattedSymbol: '—',
+          Z: 0, N: 0, A: 0,
+          mass: '0.000',
+          exists: false,
+          stable: false,
+          decay: 'none',
+          halflife: '—',
+          decayText: 'Sin partículas',
+          desc: 'Añade protones o neutrones para construir un núcleo atómico.'
+        };
+      }
+
+      const bound = isNuclideBound(Z, N);
+      const elem = (Z < ELEMENTS.length) ? ELEMENTS[Z] : { z: Z, symbol: `E${Z}`, name: `Elemento-${Z}` };
+      const key = `${Z}_${N}`;
+      const A = Z + N;
+      const massApprox = getAtomicMass(Z, N, A);
+      const formattedSymbol = Z > 0 ? `<sup>${A}</sup><sub>${Z}</sub>${elem.symbol}` : `<sup>1</sup><sub>0</sub>n`;
+
+      const stable = isStableNuclide(Z, N);
+
+      if (ISOTOPE_DB[key]) {
+        const item = ISOTOPE_DB[key];
+        const branches = BRANCHING_RATIOS[key];
+        let branchInfo = '';
+        if (branches) {
+          branchInfo = branches.map(b => `${(b.prob * 100).toFixed(1)}% ${getShortDecayName(b.mode)}`).join(' / ');
+        }
+        return {
+          name: `${elem.name}-${A}`,
+          symbol: elem.symbol,
+          formattedSymbol: formattedSymbol,
+          Z, N, A,
+          mass: massApprox,
+          exists: true,
+          stable: stable || item.stable,
+          halflife: (stable || item.stable) ? 'Estable (∞)' : (item.halflife || 'Desconocido'),
+          decay: (stable || item.stable) ? 'none' : item.decay,
+          decayText: (stable || item.stable) ? 'Estable' : getDecayName(item.decay),
+          hasBranching: !!branches && !stable,
+          branchInfo: branchInfo,
+          desc: item.desc
+        };
+      }
+
+      if (stable) {
+        return {
+          name: `${elem.name}-${A}`,
+          symbol: elem.symbol,
+          formattedSymbol: formattedSymbol,
+          Z, N, A,
+          mass: massApprox,
+          exists: true,
+          stable: true,
+          halflife: 'Estable (∞)',
+          decay: 'none',
+          decayText: 'Estable',
+          hasBranching: false,
+          branchInfo: '',
+          desc: `${elem.name}-${A} es un isótopo estable ubicado en el Valle de Estabilidad.`
+        };
+      }
+
+      if (!bound) {
+        let decayMode = 'proton_emission';
+        if (Z === 0 || N > Z * 1.6) decayMode = 'double_neutron';
+        else if (Z > N * 1.8) decayMode = 'double_proton';
+
+        return {
+          name: Z > 0 ? `${elem.name}-${A} (No Ligado)` : `Polineutrón (No Ligado)`,
+          symbol: elem.symbol,
+          formattedSymbol: formattedSymbol,
+          Z, N, A,
+          mass: massApprox,
+          exists: false,
+          stable: false,
+          decay: decayMode,
+          halflife: '< 10⁻²¹ s',
+          decayText: 'Núcleo No Ligado (Fuera de Líneas de Goteo)',
+          desc: `El nucleido ${elem.name}-${A} está fuera de las líneas de goteo nuclear.`
+        };
+      }
+
+      // DETERMINACIÓN FALLBACK MONÓTONA HACIA EL VALLE DE ESTABILIDAD
+      const stableList = STABLE_N_RANGES[Z] || [];
+      let minStableN = stableList.length > 0 ? stableList[0] : Math.round(Z <= 20 ? Z : Z * 1.25);
+      let maxStableN = stableList.length > 0 ? stableList[stableList.length - 1] : Math.round(Z <= 20 ? Z : Z * 1.35);
+
+      let decay = 'beta_minus';
+      let halflife = '1.0 s';
+      let desc = '';
+
+      if (Z >= 118) {
+        decay = 'alpha';
+        desc = `${elem.name}-${A} es un isótopo súper pesado que sufre emisión Alfa (α) estricta.`;
+      } else if (Z > 82) {
+        if (N > maxStableN + 10) {
+          decay = 'beta_minus_gamma';
+          desc = `${elem.name}-${A} tiene exceso masivo de neutrones; sufre desintegración β⁻ con fotones γ.`;
+        } else {
+          decay = (Z % 2 === 0 && N % 2 === 0) ? 'alpha_gamma' : 'alpha';
+          desc = `${elem.name}-${A} es un isótopo pesado que emite partículas Alfa (α).`;
+        }
+      } else {
+        if (N > maxStableN) {
+          if (N > maxStableN + 12) {
+            decay = 'double_neutron';
+            desc = `${elem.name}-${A} tiene exceso extremo de neutrones y sufre emisión simultánea de 2 neutrones (2nº).`;
+          } else if (N > maxStableN + 5) {
+            decay = 'beta_minus_gamma';
+            desc = `${elem.name}-${A} sufre desintegración β⁻ acompañada de radiación Gamma (γ).`;
+          } else {
+            decay = 'beta_minus';
+            desc = `${elem.name}-${A} presenta exceso de neutrones y se desintegra por Beta Menos (β⁻).`;
+          }
+        } else {
+          if (N < minStableN - 10) {
+            decay = 'double_proton';
+            desc = `${elem.name}-${A} sufre emisión simultánea de dos protones (2p⁺).`;
+          } else if (N < minStableN - 4) {
+            decay = 'beta_plus_gamma';
+            desc = `${elem.name}-${A} sufre desintegración β⁺ acompañada de fotones Gamma (γ).`;
+          } else {
+            decay = 'beta_plus';
+            desc = `${elem.name}-${A} se desintegra mediante Beta Más (β⁺) / Captura Electrónica.`;
+          }
+        }
+      }
+
+      return {
+        name: `${elem.name}-${A}`,
+        symbol: elem.symbol,
+        formattedSymbol: formattedSymbol,
+        Z, N, A,
+        mass: massApprox,
+        exists: true,
+        stable: false,
+        halflife: halflife,
+        decay: decay,
+        decayText: getDecayName(decay),
+        hasBranching: false,
+        branchInfo: '',
+        desc: desc
+      };
+    }
+
+    function getDecayName(code) {
+      switch (code) {
+        case 'beta_minus': return 'Desintegración Beta Menos (β⁻)';
+        case 'beta_minus_gamma': return 'Beta Menos + Gamma (β⁻ + γ) [Simultáneo]';
+        case 'beta_plus': return 'Desintegración Beta Más (β⁺)';
+        case 'beta_plus_gamma': return 'Beta Más + Gamma (β⁺ + γ) [Simultáneo]';
+        case 'double_beta_minus': return 'Doble Beta Menos (2β⁻) [Simultáneo]';
+        case 'alpha': return 'Emisión Alfa (α)';
+        case 'alpha_gamma': return 'Emisión Alfa + Gamma (α + γ) [Simultáneo]';
+        case 'gamma': return 'Transición Isomérica Gamma (γ)';
+        case 'proton_emission': return 'Emisión de Protón (p⁺)';
+        case 'double_proton': return 'Emisión Simultánea de 2 Protones (2p⁺)';
+        case 'neutron_emission': return 'Emisión de Neutrón (nº)';
+        case 'double_neutron': return 'Emisión Simultánea de 2 Neutrones (2nº)';
+        default: return 'Estable';
+      }
+    }
+
+    function getDecaySymbolHTML(code, probStr = '') {
+      const probBadge = probStr ? `<span class="ml-1 text-[10px] bg-slate-800 text-amber-300 px-1.5 py-0.5 rounded border border-slate-700 font-mono">${probStr}</span>` : '';
+      switch (code) {
+        case 'beta_minus': return `<span class="text-sky-400 font-bold">⚡ β⁻ (e⁻)</span>${probBadge}`;
+        case 'beta_minus_gamma': return `<span class="text-sky-400 font-bold">⚡ β⁻</span> + <span class="text-amber-400 font-bold">γ</span> <span class="text-[10px] text-amber-300 font-mono">[Simultáneo]</span>${probBadge}`;
+        case 'beta_plus': return `<span class="text-orange-400 font-bold">⚡ β⁺ (e⁺)</span>${probBadge}`;
+        case 'beta_plus_gamma': return `<span class="text-orange-400 font-bold">⚡ β⁺</span> + <span class="text-amber-400 font-bold">γ</span> <span class="text-[10px] text-amber-300 font-mono">[Simultáneo]</span>${probBadge}`;
+        case 'double_beta_minus': return `<span class="text-cyan-300 font-extrabold">⚡ 2× β⁻ (Doble Beta)</span> <span class="text-[10px] text-cyan-200 font-mono">[Simultáneo]</span>${probBadge}`;
+        case 'alpha': return `<span class="text-purple-400 font-bold">⚡ Partícula α (⁴₂He)</span>${probBadge}`;
+        case 'alpha_gamma': return `<span class="text-purple-400 font-bold">⚡ α</span> + <span class="text-amber-400 font-bold">γ</span> <span class="text-[10px] text-amber-300 font-mono">[Simultáneo]</span>${probBadge}`;
+        case 'gamma': return `<span class="text-amber-400 font-bold">⚡ Fotón Gamma (γ)</span>${probBadge}`;
+        case 'proton_emission': return `<span class="text-rose-400 font-bold">⚡ Protón (p⁺)</span>${probBadge}`;
+        case 'double_proton': return `<span class="text-rose-500 font-extrabold">⚡ 2× p⁺ (Doble Protón)</span> <span class="text-[10px] text-rose-300 font-mono">[Simultáneo]</span>${probBadge}`;
+        case 'neutron_emission': return `<span class="text-cyan-300 font-bold">⚡ Neutrón (nº)</span>${probBadge}`;
+        case 'double_neutron': return `<span class="text-sky-300 font-extrabold">⚡ 2× nº (Doble Neutrón)</span> <span class="text-[10px] text-sky-200 font-mono">[Simultáneo]</span>${probBadge}`;
+        default: return '—';
+      }
+    }
+
+    // MUESTREO CUÁNTICO DE RAMIFICACIÓN
+    function selectDecayMode(Z, N) {
+      const data = getIsotopeData(Z, N);
+      if (data.stable || !data.exists) return { mode: 'none', probStr: '' };
+
+      const key = `${Z}_${N}`;
+      if (BRANCHING_RATIOS[key]) {
+        const branches = BRANCHING_RATIOS[key];
+        const r = Math.random();
+        let cumulative = 0;
+        for (const branch of branches) {
+          cumulative += branch.prob;
+          if (r <= cumulative) {
+            return { mode: branch.mode, probStr: `${(branch.prob * 100).toFixed(1)}%` };
+          }
+        }
+        return { mode: branches[0].mode, probStr: `${(branches[0].prob * 100).toFixed(1)}%` };
+      }
+
+      return { mode: data.decay, probStr: '' };
+    }
+
+    // ==========================================
+    // 6. SINTETIZADOR DE AUDIO (WEB AUDIO API)
+    // ==========================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type, duration, rampFreq = null, gainVal = 0.2) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        if (rampFreq) {
+          osc.frequency.exponentialRampToValueAtTime(rampFreq, this.ctx.currentTime + duration);
+        }
+        gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      }
+
+      playAddProton() { this.playTone(340, 'sine', 0.09, 680, 0.2); }
+      playAddNeutron() { this.playTone(220, 'triangle', 0.09, 380, 0.25); }
+      playRemove() { this.playTone(450, 'sine', 0.08, 150, 0.18); }
+      playDecay() { this.playTone(700, 'sawtooth', 0.28, 90, 0.28); }
+      playGammaSound() { this.playTone(1800, 'sine', 0.25, 3600, 0.18); }
+      playDoubleImpact() { 
+        this.playTone(120, 'sawtooth', 0.35, 40, 0.35); 
+        setTimeout(() => this.playTone(180, 'square', 0.25, 50, 0.25), 50);
+      }
+
+      playChime() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        [523.25, 659.25, 783.99].forEach((freq, i) => {
+          setTimeout(() => this.playTone(freq, 'sine', 0.25, null, 0.12), i * 40);
+        });
+      }
+    }
+
+    const audio = new SoundEngine();
+
+    // ==========================================
+    // 7. ESTADO GLOBAL Y CANVAS ENGINE
+    // ==========================================
+    let state = {
+      Z: 6,
+      N: 6, 
+      hoverZ: -1,
+      hoverN: -1,
+      particles: [],
+      emissionParticles: [],
+      historyStep: 0,
+      decayHistory: [],
+      autoDecayTimer: null
+    };
+
+    const canvas = document.getElementById('nucleus-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function syncParticles() {
+      const targetP = state.Z;
+      const targetN = state.N;
+
+      let currentP = state.particles.filter(p => p.type === 'proton').length;
+      let currentN = state.particles.filter(p => p.type === 'neutron').length;
+
+      const centerX = canvas.parentElement.clientWidth / 2;
+      const centerY = canvas.parentElement.clientHeight / 2;
+
+      while (currentP < targetP) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 20;
+        state.particles.push({
+          x: centerX + Math.cos(angle) * dist,
+          y: centerY + Math.sin(angle) * dist,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          type: 'proton',
+          radius: 14
+        });
+        currentP++;
+      }
+      while (currentP > targetP) {
+        const idx = state.particles.findIndex(p => p.type === 'proton');
+        if (idx !== -1) state.particles.splice(idx, 1);
+        currentP--;
+      }
+
+      while (currentN < targetN) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 20;
+        state.particles.push({
+          x: centerX + Math.cos(angle) * dist,
+          y: centerY + Math.sin(angle) * dist,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          type: 'neutron',
+          radius: 14
+        });
+        currentN++;
+      }
+      while (currentN > targetN) {
+        const idx = state.particles.findIndex(p => p.type === 'neutron');
+        if (idx !== -1) state.particles.splice(idx, 1);
+        currentN--;
+      }
+    }
+
+    function physicsLoop() {
+      const width = canvas.parentElement.clientWidth;
+      const height = canvas.parentElement.clientHeight;
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const totalA = state.Z + state.N;
+      const particleRadius = totalA > 50 ? Math.max(4.5, 13.5 - (totalA - 50) * 0.05) : 13.5;
+
+      const enableVibe = document.getElementById('chk-vibe').checked;
+      const showSigns = document.getElementById('chk-signs').checked;
+
+      state.particles.forEach((p) => {
+        p.radius = particleRadius;
+        const dx = centerX - p.x;
+        const dy = centerY - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+
+        const k = 0.08;
+        p.vx += (dx / dist) * dist * k * 0.05;
+        p.vy += (dy / dist) * dist * k * 0.05;
+
+        if (enableVibe) {
+          p.vx += (Math.random() - 0.5) * 0.35;
+          p.vy += (Math.random() - 0.5) * 0.35;
+        }
+
+        p.vx *= 0.86;
+        p.vy *= 0.86;
+
+        p.x += p.vx;
+        p.y += p.vy;
+      });
+
+      for (let i = 0; i < state.particles.length; i++) {
+        for (let j = i + 1; j < state.particles.length; j++) {
+          const p1 = state.particles[i];
+          const p2 = state.particles[j];
+
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+          const minDist = p1.radius + p2.radius - 1;
+
+          if (dist < minDist) {
+            const overlap = minDist - dist;
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            const push = overlap * 0.4;
+            p1.x -= nx * push;
+            p1.y -= ny * push;
+            p2.x += nx * push;
+            p2.y += ny * push;
+          }
+        }
+      }
+
+      state.particles.forEach((p) => {
+        drawSphere(ctx, p.x, p.y, p.radius, p.type, showSigns);
+      });
+
+      // DIBUJO DE PARTÍCULAS EMITIDAS SIMULTÁNEAMENTE
+      for (let i = state.emissionParticles.length - 1; i >= 0; i--) {
+        const ep = state.emissionParticles[i];
+        ep.x += ep.vx;
+        ep.y += ep.vy;
+        ep.life -= 1;
+
+        if (!ep.trail) ep.trail = [];
+        ep.trail.push({ x: ep.x, y: ep.y });
+        if (ep.trail.length > 14) ep.trail.shift();
+
+        if (ep.kind === 'gamma') {
+          ctx.beginPath();
+          ctx.strokeStyle = '#facc15';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#fef08a';
+          ctx.shadowBlur = 10;
+          
+          for (let t = 0; t < ep.trail.length; t++) {
+            const pt = ep.trail[t];
+            const perpX = -ep.vy * 0.35 * Math.sin(t * 0.9);
+            const perpY = ep.vx * 0.35 * Math.sin(t * 0.9);
+            if (t === 0) ctx.moveTo(pt.x + perpX, pt.y + perpY);
+            else ctx.lineTo(pt.x + perpX, pt.y + perpY);
+          }
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          ctx.beginPath();
+          ctx.arc(ep.x, ep.y, 8, 0, Math.PI * 2);
+          ctx.fillStyle = '#fef08a';
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('γ (Fotón)', ep.x, ep.y - 12);
+
+        } else {
+          ctx.beginPath();
+          for (let t = 0; t < ep.trail.length; t++) {
+            const pt = ep.trail[t];
+            if (t === 0) ctx.moveTo(pt.x, pt.y);
+            else ctx.lineTo(pt.x, pt.y);
+          }
+          ctx.strokeStyle = ep.color || '#f59e0b';
+          ctx.lineWidth = 2.5;
+          ctx.globalAlpha = 0.5;
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
+
+          if (ep.kind === 'alpha') {
+            drawSphere(ctx, ep.x - 5, ep.y - 5, 7, 'proton', showSigns);
+            drawSphere(ctx, ep.x + 5, ep.y - 5, 7, 'proton', showSigns);
+            drawSphere(ctx, ep.x - 5, ep.y + 5, 7, 'neutron', showSigns);
+            drawSphere(ctx, ep.x + 5, ep.y + 5, 7, 'neutron', showSigns);
+          } else {
+            ctx.beginPath();
+            ctx.arc(ep.x, ep.y, ep.radius || 7, 0, Math.PI * 2);
+            ctx.fillStyle = ep.color || '#3b82f6';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            if (ep.label) {
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 11px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(ep.label, ep.x, ep.y - 9);
+            }
+          }
+        }
+
+        if (ep.life <= 0 || ep.x < -40 || ep.x > width + 40 || ep.y < -40 || ep.y > height + 40) {
+          state.emissionParticles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(physicsLoop);
+    }
+
+    function drawSphere(context, x, y, radius, type, showSign) {
+      context.save();
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+
+      const grad = context.createRadialGradient(
+        x - radius * 0.35, y - radius * 0.35, radius * 0.1,
+        x, y, radius
+      );
+
+      if (type === 'proton') {
+        grad.addColorStop(0, '#fca5a5');
+        grad.addColorStop(0.4, '#ef4444');
+        grad.addColorStop(1, '#991b1b');
+      } else {
+        grad.addColorStop(0, '#e0f2fe');
+        grad.addColorStop(0.4, '#38bdf8');
+        grad.addColorStop(1, '#0369a1');
+      }
+
+      context.fillStyle = grad;
+      context.fill();
+
+      context.lineWidth = 1.2;
+      context.strokeStyle = type === 'proton' ? '#7f1d1d' : '#0c4a6e';
+      context.stroke();
+
+      if (showSign && radius > 6) {
+        context.fillStyle = '#ffffff';
+        context.font = `bold ${Math.floor(radius * 1.05)}px sans-serif`;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.shadowColor = 'rgba(0,0,0,0.6)';
+        context.shadowBlur = 3;
+        context.fillText(type === 'proton' ? '+' : 'n', x, y + 0.5);
+      }
+
+      context.restore();
+    }
+
+    function updateUI() {
+      const data = getIsotopeData(state.Z, state.N);
+
+      document.getElementById('p-count-badge').textContent = state.Z;
+      document.getElementById('n-count-badge').textContent = state.N;
+
+      document.getElementById('nuclide-A').textContent = data.A;
+      document.getElementById('nuclide-Z').textContent = data.Z;
+      document.getElementById('nuclide-symbol').textContent = data.symbol;
+      document.getElementById('nuclide-name').textContent = data.name;
+      document.getElementById('nuclide-class').textContent = state.Z > 0 ? `Elemento Químico #${state.Z}` : 'Partícula Subatómica';
+
+      document.getElementById('prop-A').textContent = data.A;
+      document.getElementById('prop-mass').textContent = `${data.mass} u`;
+      document.getElementById('prop-nz').textContent = state.Z > 0 ? (state.N / state.Z).toFixed(2) : '—';
+      document.getElementById('prop-halflife').textContent = data.halflife;
+      document.getElementById('nuclide-desc').textContent = data.desc;
+
+      const r_fm = data.A > 0 ? (1.2 * Math.pow(data.A, 1/3)).toFixed(2) : '0.0';
+      document.getElementById('radius-val').textContent = r_fm;
+
+      const badge = document.getElementById('stability-badge');
+      const decayBtn = document.getElementById('btn-decay');
+      const decayHint = document.getElementById('decay-hint');
+
+      if (data.Z === 0 && data.N === 0) {
+        badge.className = "w-full py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow bg-slate-800 text-slate-300 border border-slate-700";
+        badge.innerHTML = "<span>⚪ NÚCLEO VACÍO</span>";
+        decayBtn.disabled = true;
+        decayHint.textContent = "Añade protones o neutrones para construir un núcleo.";
+      } else if (data.stable) {
+        badge.className = "w-full py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow bg-emerald-950/80 text-emerald-300 border border-emerald-700";
+        badge.innerHTML = "<span>✅ NÚCLEO ESTABLE</span>";
+        decayBtn.disabled = true;
+        decayHint.textContent = "Este isótopo es estable. No emite radiación espontánea.";
+      } else {
+        badge.className = "w-full py-2 px-3 rounded-xl text-xs font-black flex flex-col items-center justify-center gap-1 transition-all shadow bg-rose-950/90 text-rose-300 border border-rose-700 pulse-glow";
+        let branchStr = data.hasBranching ? `<div class="text-[10px] font-mono font-semibold text-amber-300 mt-1 pt-1 border-t border-rose-800/60 w-full text-center">🔀 Ramificación Cuántica: ${data.branchInfo}</div>` : '';
+        badge.innerHTML = `<div><span>⚠️ INESTABLE (${data.decayText})</span></div>${branchStr}`;
+        decayBtn.disabled = false;
+        decayHint.textContent = data.hasBranching
+          ? "Isótopo con ramificación cuántica. Pulsa 'Desintegrar Ahora' para muestreo de vía."
+          : "Isótopo inestable. Haz clic en 'Desintegrar Ahora'.";
+      }
+
+      if (document.getElementById('chk-auto-decay').checked && !data.stable && (state.Z > 0 || state.N > 0)) {
+        clearTimeout(state.autoDecayTimer);
+        state.autoDecayTimer = setTimeout(() => {
+          triggerDecay();
+        }, 1600);
+      }
+
+      drawMiniSegre();
+      drawFullSegre();
+    }
+
+    function addHistoryEntry(parentData, decayObj, daughterData) {
+      state.historyStep++;
+      const entry = {
+        step: state.historyStep,
+        parent: parentData,
+        decayType: decayObj.mode,
+        probStr: decayObj.probStr,
+        daughter: daughterData
+      };
+      state.decayHistory.push(entry);
+      renderHistoryTable();
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('history-table-body');
+      const badge = document.getElementById('history-count-badge');
+      badge.textContent = `${state.decayHistory.length} evento${state.decayHistory.length === 1 ? '' : 's'}`;
+
+      if (state.decayHistory.length === 0) {
+        tbody.innerHTML = `
+          <tr id="empty-history-row">
+            <td colspan="5" class="py-8 text-center text-slate-500 italic">
+              Aún no se ha realizado ninguna desintegración en este ciclo.<br>Añade nucleones e inicia una reacción radiactiva.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      state.decayHistory.forEach((item) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/60 transition border-b border-slate-800/80";
+
+        const parentTag = `<sup>${item.parent.A}</sup><sub>${item.parent.Z}</sub><b>${item.parent.symbol || 'n'}</b> (${item.parent.name})`;
+        const daughterTag = `<sup>${item.daughter.A}</sup><sub>${item.daughter.Z}</sub><b>${item.daughter.symbol || 'n'}</b> (${item.daughter.name})`;
+
+        const daughterStatusHTML = item.daughter.stable
+          ? `<span class="bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded text-[11px] font-bold">Estable</span>`
+          : `<span class="bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded text-[11px] font-bold">Radiactivo</span>`;
+
+        tr.innerHTML = `
+          <td class="py-2 px-2 font-mono text-amber-400 font-bold">Paso ${item.step}</td>
+          <td class="py-2 px-2 text-slate-200 font-serif text-sm">${parentTag}</td>
+          <td class="py-2 px-2">${getDecaySymbolHTML(item.decayType, item.probStr)}</td>
+          <td class="py-2 px-2 text-slate-200 font-serif text-sm">${daughterTag}</td>
+          <td class="py-2 px-2 text-right">${daughterStatusHTML}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const container = document.getElementById('history-scroll-container');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearHistory() {
+      state.historyStep = 0;
+      state.decayHistory = [];
+      renderHistoryTable();
+      audio.playRemove();
+    }
+
+    function adjustParticle(type, delta) {
+      if (type === 'proton') {
+        const nextZ = state.Z + delta;
+        if (nextZ < 0 || nextZ > 118) return;
+        state.Z = nextZ;
+        if (delta > 0) audio.playAddProton();
+        else audio.playRemove();
+      } else {
+        const nextN = state.N + delta;
+        if (nextN < 0 || nextN > 180) return;
+        state.N = nextN;
+        if (delta > 0) audio.playAddNeutron();
+        else audio.playRemove();
+      }
+
+      syncParticles();
+      updateUI();
+    }
+
+    function loadPreset(z, n) {
+      state.Z = z;
+      state.N = n;
+      audio.playChime();
+      syncParticles();
+      updateUI();
+    }
+
+    function resetSimulation() {
+      state.Z = 6;
+      state.N = 6;
+      clearHistory();
+      syncParticles();
+      updateUI();
+      audio.playRemove();
+    }
+
+    // ==========================================
+    // 8. EJECUCIÓN FÍSICA Y EMISIÓN SIMULTÁNEA DE PARTÍCULAS
+    // ==========================================
+    function triggerDecay() {
+      const parentData = getIsotopeData(state.Z, state.N);
+      if (parentData.stable || (state.Z === 0 && state.N === 0) || !parentData.exists) return;
+
+      const centerX = canvas.parentElement.clientWidth / 2;
+      const centerY = canvas.parentElement.clientHeight / 2;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 7.5;
+
+      const decayObj = selectDecayMode(state.Z, state.N);
+      let decayType = decayObj.mode;
+
+      if (decayType.includes('double')) {
+        audio.playDoubleImpact();
+      } else {
+        audio.playDecay();
+      }
+
+      // MANEJO DE EMISIONES SIMULTÁNEAS Y LANZAMIENTO DE PARTÍCULAS AL CANVAS
+      if (decayType.includes('gamma')) {
+        setTimeout(() => {
+          audio.playGammaSound();
+          const gammaAngle = angle + (Math.random() - 0.5) * 1.8 + Math.PI / 2;
+          state.emissionParticles.push({
+            x: centerX, y: centerY,
+            vx: Math.cos(gammaAngle) * 13, vy: Math.sin(gammaAngle) * 13,
+            life: 80, radius: 8, color: '#facc15', label: 'γ (Fotón)', kind: 'gamma'
+          });
+        }, 100);
+      }
+
+      switch (decayType) {
+        case 'beta_minus':
+        case 'beta_minus_gamma':
+          if (state.N > 0 && state.Z < 118) {
+            state.N -= 1;
+            state.Z += 1;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              life: 80, radius: 5, color: '#38bdf8', label: 'e⁻ (β⁻)', kind: 'electron'
+            });
+          }
+          break;
+
+        case 'double_beta_minus':
+          if (state.N >= 2 && state.Z <= 116) {
+            state.N -= 2;
+            state.Z += 2;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              life: 85, radius: 5, color: '#38bdf8', label: 'e⁻ (β⁻ #1)', kind: 'electron'
+            });
+            const angle2 = angle + Math.PI + (Math.random() - 0.5) * 0.8;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle2) * speed, vy: Math.sin(angle2) * speed,
+              life: 85, radius: 5, color: '#0284c7', label: 'e⁻ (β⁻ #2)', kind: 'electron'
+            });
+          }
+          break;
+
+        case 'beta_plus':
+        case 'beta_plus_gamma':
+          if (state.Z > 0) {
+            state.Z -= 1;
+            state.N += 1;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              life: 80, radius: 5, color: '#f97316', label: 'e⁺ (β⁺)', kind: 'positron'
+            });
+          }
+          break;
+
+        case 'alpha':
+        case 'alpha_gamma':
+          if (state.Z >= 2 && state.N >= 2) {
+            state.Z -= 2;
+            state.N -= 2;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle) * (speed * 0.75), vy: Math.sin(angle) * (speed * 0.75),
+              life: 85, radius: 12, color: '#c084fc', label: 'Partícula α (⁴He)', kind: 'alpha'
+            });
+          }
+          break;
+
+        case 'gamma':
+          // RESOLUCIÓN DE TECNECIO-99m / ISÓMEROS: LA EMISIÓN GAMMA DESEXCITA EL NÚCLEO A Tc-99 (β⁻)
+          audio.playGammaSound();
+          state.emissionParticles.push({
+            x: centerX, y: centerY,
+            vx: Math.cos(angle) * 13, vy: Math.sin(angle) * 13,
+            life: 80, radius: 8, color: '#facc15', label: 'γ (Fotón)', kind: 'gamma'
+          });
+          // El núcleo desexcitado pasa a la vía débil de su estado fundamental
+          if (state.Z === 43 && state.N === 56) {
+            state.N -= 1;
+            state.Z += 1; // Transición complementaria al estado fundamental Tc-99 -> Ru-99
+          }
+          break;
+
+        case 'proton_emission':
+          if (state.Z > 0) {
+            state.Z -= 1;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              life: 80, radius: 8, color: '#ef4444', label: 'p⁺', kind: 'proton'
+            });
+          }
+          break;
+
+        case 'double_proton':
+          if (state.Z >= 2) {
+            state.Z -= 2;
+            const a1 = angle;
+            const a2 = angle + Math.PI * 0.6;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(a1) * speed, vy: Math.sin(a1) * speed,
+              life: 85, radius: 8, color: '#ef4444', label: 'p⁺ #1', kind: 'proton'
+            });
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(a2) * speed, vy: Math.sin(a2) * speed,
+              life: 85, radius: 8, color: '#f43f5e', label: 'p⁺ #2', kind: 'proton'
+            });
+          }
+          break;
+
+        case 'neutron_emission':
+          if (state.N > 0) {
+            state.N -= 1;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              life: 80, radius: 8, color: '#38bdf8', label: 'nº', kind: 'neutron'
+            });
+          }
+          break;
+
+        case 'double_neutron':
+          if (state.N >= 2) {
+            state.N -= 2;
+            const a1 = angle;
+            const a2 = angle + Math.PI * 0.7;
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(a1) * speed, vy: Math.sin(a1) * speed,
+              life: 85, radius: 8, color: '#38bdf8', label: 'nº #1', kind: 'neutron'
+            });
+            state.emissionParticles.push({
+              x: centerX, y: centerY,
+              vx: Math.cos(a2) * speed, vy: Math.sin(a2) * speed,
+              life: 85, radius: 8, color: '#0284c7', label: 'nº #2', kind: 'neutron'
+            });
+          }
+          break;
+      }
+
+      const daughterData = getIsotopeData(state.Z, state.N);
+      if (daughterData.stable) {
+        audio.playChime();
+      }
+
+      addHistoryEntry(parentData, decayObj, daughterData);
+      syncParticles();
+      updateUI();
+    }
+
+    // ==========================================
+    // 9. CARTA DE SEGRÈ INTERACTIVA CON TOOLTIP COMPLETO
+    // ==========================================
+    function drawMiniSegre() {
+      const cvs = document.getElementById('mini-segre-canvas');
+      if (!cvs) return;
+      const c = cvs.getContext('2d');
+      const w = cvs.width = cvs.parentElement.clientWidth;
+      const h = cvs.height = cvs.parentElement.clientHeight;
+
+      c.clearRect(0, 0, w, h);
+
+      const maxZ = 118, maxN = 180;
+      const cellW = w / (maxN + 2);
+      const cellH = h / (maxZ + 2);
+
+      for (let z = 0; z <= maxZ; z += 2) {
+        for (let n = 0; n <= maxN; n += 2) {
+          if (z === 0 && n === 0) continue;
+          const info = getIsotopeData(z, n);
+          if (!info.exists) continue;
+
+          let color = '#1e293b';
+          if (info.stable) color = '#10b981';
+          else if (info.decay.includes('beta_minus')) color = '#3b82f6';
+          else if (info.decay.includes('beta_plus')) color = '#f97316';
+          else if (info.decay.includes('alpha')) color = '#a855f7';
+          else if (info.decay === 'gamma') color = '#facc15';
+          else if (info.decay.includes('double_beta')) color = '#22d3ee';
+
+          c.fillStyle = color;
+          c.fillRect((n + 1) * cellW, h - (z + 2) * cellH, Math.max(1.5, cellW * 2), Math.max(1.5, cellH * 2));
+        }
+      }
+
+      c.strokeStyle = '#fbbf24';
+      c.lineWidth = 2;
+      c.strokeRect((state.N + 1) * cellW - 1, h - (state.Z + 2) * cellH - 1, cellW * 2, cellH * 2);
+    }
+
+    function drawFullSegre() {
+      const cvs = document.getElementById('segre-full-canvas');
+      if (!cvs) return;
+      const c = cvs.getContext('2d');
+      const w = cvs.width;
+      const h = cvs.height;
+
+      c.clearRect(0, 0, w, h);
+
+      const maxZ = 118, maxN = 180;
+      const padLeft = 60, padBottom = 50;
+      const cellW = (w - padLeft - 20) / (maxN + 1);
+      const cellH = (h - padBottom - 20) / (maxZ + 1);
+
+      // Dibujar Ejes de Coordenadas
+      c.strokeStyle = '#475569';
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.moveTo(padLeft, 10);
+      c.lineTo(padLeft, h - padBottom);
+      c.lineTo(w - 10, h - padBottom);
+      c.stroke();
+
+      // Línea de referencia N = Z
+      c.save();
+      c.setLineDash([4, 4]);
+      c.strokeStyle = '#334155';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(padLeft, h - padBottom);
+      const endVal = Math.min(maxZ, maxN);
+      c.lineTo(padLeft + endVal * cellW, h - padBottom - endVal * cellH);
+      c.stroke();
+      c.fillStyle = '#64748b';
+      c.font = '10px sans-serif';
+      c.fillText('N = Z', padLeft + endVal * cellW - 15, h - padBottom - endVal * cellH - 5);
+      c.restore();
+
+      // Líneas de Números Mágicos
+      const magicZ = [2, 8, 20, 28, 50, 82];
+      const magicN = [2, 8, 20, 28, 50, 82, 126];
+      c.save();
+      c.setLineDash([2, 4]);
+      c.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      magicZ.forEach(zVal => {
+        const y = h - padBottom - (zVal + 0.5) * cellH;
+        c.beginPath();
+        c.moveTo(padLeft, y);
+        c.lineTo(w - 10, y);
+        c.stroke();
+      });
+      magicN.forEach(nVal => {
+        const x = padLeft + (nVal + 0.5) * cellW;
+        c.beginPath();
+        c.moveTo(x, 10);
+        c.lineTo(x, h - padBottom);
+        c.stroke();
+      });
+      c.restore();
+
+      // Rótulos Ejes
+      c.fillStyle = '#94a3b8';
+      c.font = 'bold 13px sans-serif';
+      c.textAlign = 'center';
+      c.fillText('Número de Neutrones (N)', w / 2, h - 12);
+
+      c.save();
+      c.translate(20, h / 2);
+      c.rotate(-Math.PI / 2);
+      c.fillText('Número Atómico / Protones (Z)', 0, 0);
+      c.restore();
+
+      // Marcas numéricas
+      c.font = '10px monospace';
+      for (let n = 0; n <= maxN; n += 20) {
+        const x = padLeft + n * cellW + cellW / 2;
+        c.fillText(n, x, h - padBottom + 18);
+      }
+      for (let z = 0; z <= maxZ; z += 10) {
+        const y = h - padBottom - (z * cellH) - cellH / 2;
+        c.fillText(z, padLeft - 25, y + 3);
+      }
+
+      // Dibujar celda a celda únicamente los isótopos físicamente ligados
+      for (let z = 0; z <= maxZ; z++) {
+        for (let n = 0; n <= maxN; n++) {
+          if (z === 0 && n === 0) continue;
+          const info = getIsotopeData(z, n);
+          const x = padLeft + n * cellW;
+          const y = h - padBottom - (z + 1) * cellH;
+
+          if (!info.exists) {
+            if (z === state.hoverZ && n === state.hoverN) {
+              c.strokeStyle = '#475569';
+              c.lineWidth = 1.5;
+              c.strokeRect(x, y, cellW, cellH);
+            }
+            continue;
+          }
+
+          let color = '#0f172a';
+          if (info.stable) color = '#10b981';
+          else if (info.decay.includes('beta_minus')) color = '#3b82f6';
+          else if (info.decay.includes('beta_plus')) color = '#f97316';
+          else if (info.decay.includes('alpha')) color = '#a855f7';
+          else if (info.decay === 'gamma') color = '#facc15';
+          else if (info.decay.includes('double_beta')) color = '#22d3ee';
+          else if (info.decay.includes('double_proton') || info.decay.includes('double_neutron')) color = '#f43f5e';
+
+          c.fillStyle = color;
+          c.fillRect(x + 0.2, y + 0.2, cellW - 0.4, cellH - 0.4);
+
+          if (z === state.Z && n === state.N) {
+            c.strokeStyle = '#fbbf24';
+            c.lineWidth = 2.5;
+            c.strokeRect(x - 1, y - 1, cellW + 2, cellH + 2);
+          } else if (z === state.hoverZ && n === state.hoverN) {
+            c.strokeStyle = '#38bdf8';
+            c.lineWidth = 2;
+            c.strokeRect(x - 1, y - 1, cellW + 2, cellH + 2);
+          }
+        }
+      }
+    }
+
+    const segreCanvas = document.getElementById('segre-full-canvas');
+
+    segreCanvas.addEventListener('click', (e) => {
+      const rect = segreCanvas.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) * (segreCanvas.width / rect.width);
+      const clickY = (e.clientY - rect.top) * (segreCanvas.height / rect.height);
+
+      const maxZ = 118, maxN = 180;
+      const padLeft = 60, padBottom = 50;
+      const cellW = (segreCanvas.width - padLeft - 20) / (maxN + 1);
+      const cellH = (segreCanvas.height - padBottom - 20) / (maxZ + 1);
+
+      const n = Math.floor((clickX - padLeft) / cellW);
+      const z = Math.floor((segreCanvas.height - padBottom - clickY) / cellH);
+
+      if (z >= 0 && z <= maxZ && n >= 0 && n <= maxN) {
+        state.Z = z;
+        state.N = n;
+        audio.playAddProton();
+        syncParticles();
+        updateUI();
+        switchTab('sim');
+      }
+    });
+
+    segreCanvas.addEventListener('mousemove', (e) => {
+      const rect = segreCanvas.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) * (segreCanvas.width / rect.width);
+      const clickY = (e.clientY - rect.top) * (segreCanvas.height / rect.height);
+
+      const maxZ = 118, maxN = 180;
+      const padLeft = 60, padBottom = 50;
+      const cellW = (segreCanvas.width - padLeft - 20) / (maxN + 1);
+      const cellH = (segreCanvas.height - padBottom - 20) / (maxZ + 1);
+
+      const n = Math.floor((clickX - padLeft) / cellW);
+      const z = Math.floor((segreCanvas.height - padBottom - clickY) / cellH);
+
+      if (z >= 0 && z <= maxZ && n >= 0 && n <= maxN && !(z === 0 && n === 0)) {
+        if (state.hoverZ !== z || state.hoverN !== n) {
+          state.hoverZ = z;
+          state.hoverN = n;
+          drawFullSegre();
+        }
+        updateSegreTooltip(e, z, n);
+      } else {
+        if (state.hoverZ !== -1 || state.hoverN !== -1) {
+          state.hoverZ = -1;
+          state.hoverN = -1;
+          drawFullSegre();
+        }
+        const tooltip = document.getElementById('segre-tooltip');
+        if (tooltip) tooltip.classList.add('hidden');
+      }
+    });
+
+    segreCanvas.addEventListener('mouseleave', () => {
+      if (state.hoverZ !== -1 || state.hoverN !== -1) {
+        state.hoverZ = -1;
+        state.hoverN = -1;
+        drawFullSegre();
+      }
+      const tooltip = document.getElementById('segre-tooltip');
+      if (tooltip) tooltip.classList.add('hidden');
+    });
+
+    function updateSegreTooltip(e, z, n) {
+      const tooltip = document.getElementById('segre-tooltip');
+      const container = document.getElementById('segre-container');
+      if (!tooltip || !container) return;
+
+      const info = getIsotopeData(z, n);
+
+      let badgeClass = "bg-emerald-950/90 text-emerald-300 border-emerald-700";
+      let badgeText = "✅ ESTABLE";
+
+      if (!info.exists) {
+        badgeClass = "bg-slate-800 text-slate-400 border-slate-600";
+        badgeText = "⚠️ NO LIGADO (Fuera de Líneas de Goteo)";
+      } else if (!info.stable) {
+        badgeClass = "bg-rose-950/90 text-rose-300 border-rose-700";
+        badgeText = "⚠️ " + info.decayText;
+      }
+
+      let branchHTML = info.hasBranching ? `<div class="text-[10px] text-amber-300 font-mono mt-1.5 pt-1 border-t border-slate-800 text-center">🔀 Ramificación: ${info.branchInfo}</div>` : '';
+
+      tooltip.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2">
+          <div class="font-serif text-2xl font-bold text-white flex items-center gap-1">
+            <span class="text-xs font-mono text-amber-400 leading-tight"><sup>${info.A}</sup><sub>${info.Z}</sub></span>
+            <span>${info.symbol || 'n'}</span>
+          </div>
+          <div class="text-right">
+            <div class="font-extrabold text-amber-300 text-xs">${info.name}</div>
+            <div class="text-[10px] text-slate-400 font-mono">Masa: ${info.mass} u</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-1 mb-2 text-center text-[11px] font-mono">
+          <div class="bg-slate-950/80 px-1.5 py-1 rounded border border-slate-800">
+            <span class="text-slate-400 text-[9px] block font-sans">Protones (Z)</span>
+            <span class="text-rose-400 font-bold">${info.Z}</span>
+          </div>
+          <div class="bg-slate-950/80 px-1.5 py-1 rounded border border-slate-800">
+            <span class="text-slate-400 text-[9px] block font-sans">Neutrones (N)</span>
+            <span class="text-sky-400 font-bold">${info.N}</span>
+          </div>
+          <div class="bg-slate-950/80 px-1.5 py-1 rounded border border-slate-800">
+            <span class="text-slate-400 text-[9px] block font-sans">Masa (A)</span>
+            <span class="text-amber-400 font-bold">${info.A}</span>
+          </div>
+        </div>
+        <div class="bg-slate-950/80 px-2 py-1.5 rounded border border-slate-800 mb-2 font-mono text-[11px]">
+          <span class="text-slate-400 text-[10px] block font-sans">Vida Media (T₁/₂):</span>
+          <span class="text-amber-300 font-bold">${info.halflife}</span>
+        </div>
+        <div class="px-2 py-1 rounded-lg text-[10px] font-bold text-center border ${badgeClass}">
+          ${badgeText}
+        </div>
+        ${branchHTML}
+      `;
+
+      tooltip.classList.remove('hidden');
+
+      const containerRect = container.getBoundingClientRect();
+      const tooltipWidth = 256;
+      const tooltipHeight = tooltip.offsetHeight || 180;
+
+      let left = e.clientX - containerRect.left + container.scrollLeft + 15;
+      let top = e.clientY - containerRect.top + container.scrollTop + 15;
+
+      if (left + tooltipWidth > container.scrollWidth - 15) {
+        left = e.clientX - containerRect.left + container.scrollLeft - tooltipWidth - 15;
+      }
+      if (top + tooltipHeight > container.scrollHeight - 15) {
+        top = e.clientY - containerRect.top + container.scrollTop - tooltipHeight - 15;
+      }
+
+      if (left < 10) left = 10;
+      if (top < 10) top = 10;
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+
+    // ACCESIBILIDAD Y EVENTOS TECLADO EN CUBOS
+    function setupDragAndDrop() {
+      const bucketP = document.getElementById('bucket-proton');
+      const bucketN = document.getElementById('bucket-neutron');
+
+      bucketP.addEventListener('click', () => adjustParticle('proton', 1));
+      bucketN.addEventListener('click', () => adjustParticle('neutron', 1));
+
+      bucketP.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); adjustParticle('proton', 1); }
+      });
+      bucketN.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); adjustParticle('neutron', 1); }
+      });
+    }
+
+    function switchTab(tab) {
+      document.getElementById('view-sim').classList.add('hidden');
+      document.getElementById('view-segre').classList.add('hidden');
+      document.getElementById('view-info').classList.add('hidden');
+
+      document.getElementById('tab-sim').className = "px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:bg-slate-800";
+      document.getElementById('tab-segre').className = "px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:bg-slate-800";
+      document.getElementById('tab-info').className = "px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:bg-slate-800";
+
+      if (tab === 'sim') {
+        document.getElementById('view-sim').classList.remove('hidden');
+        document.getElementById('tab-sim').className = "px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-amber-400 text-slate-950 shadow";
+      } else if (tab === 'segre') {
+        document.getElementById('view-segre').classList.remove('hidden');
+        document.getElementById('tab-segre').className = "px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-amber-400 text-slate-950 shadow";
+        drawFullSegre();
+      } else if (tab === 'info') {
+        document.getElementById('view-info').classList.remove('hidden');
+        document.getElementById('tab-info').className = "px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-amber-400 text-slate-950 shadow";
+      }
+    }
+
+    function toggleSound() {
+      audio.muted = !audio.muted;
+      document.getElementById('sound-text').textContent = audio.muted ? 'Sonido OFF' : 'Sonido ON';
+      document.getElementById('sound-icon').textContent = audio.muted ? '🔇' : '🔊';
+    }
+
+    window.onload = () => {
+      resizeCanvas();
+      syncParticles();
+      updateUI();
+      renderHistoryTable();
+      setupDragAndDrop();
+      physicsLoop();
+
+      document.getElementById('chk-auto-decay').addEventListener('change', (e) => {
+        if (!e.target.checked) {
+          clearTimeout(state.autoDecayTimer);
+        }
+      });
+    };
+  </script>
+</body>
+</html>
